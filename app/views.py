@@ -4,19 +4,6 @@ from . import app
 import uuid
 
 
-
-
-# ✅ Схема для валідації книги
-class BookSchema(Schema):
-    id = fields.Str(dump_only=True)
-    title = fields.Str(required=True)
-    author = fields.Str(required=True)
-    year = fields.Int(required=True)
-
-
-book_schema = BookSchema()
-books_schema = BookSchema(many=True)
-
 @app.route('/')
 def index():
     return "Hello"
