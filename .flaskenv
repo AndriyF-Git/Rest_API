@@ -1,4 +1,2 @@
-FLASK_DEBUG=1
-FLASK_APP=app.py
-FLASK_RUN_PORT=8080
-FLASK_ENV=development #deprecated
+FLASK_APP=app
+FLASK_ENV=development

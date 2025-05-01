@@ -5,5 +5,3 @@ book_bp = Blueprint("books",
                     url_prefix="/book",
                     template_folder="templates/books"
                     )
-
-from . import views

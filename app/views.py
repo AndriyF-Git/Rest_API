@@ -1,21 +1,19 @@
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request, abort, current_app
 from marshmallow import Schema, fields, ValidationError
-from . import app
 import uuid
 
-
-@app.route('/')
+@current_app.route('/')
 def index():
     return "Hello"
 
 
 # 🔧 Обробка помилок
-@app.errorhandler(404)
+@current_app.errorhandler(404)
 def not_found(e):
     return jsonify(error=str(e)), 404
 
 
-@app.errorhandler(400)
+@current_app.errorhandler(400)
 def bad_request(e):
     return jsonify(error=str(e)), 400
 
