@@ -20,9 +20,25 @@ def get_books():
     limit = request.args.get('limit', 10, type=int)
     offset = request.args.get('offset', 0, type=int)
 
+    total = Book.query.count()
     books = Book.query.limit(limit).offset(offset).all()
-    results = [{"id": b.id, "title": b.title, "author": b.author} for b in books]
-    return jsonify(results), 200
+
+    results = [{
+        "id": b.id,
+        "title": b.title,
+        "author": b.author
+    } for b in books]
+
+    return jsonify({
+        "results": results,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_next": offset + limit < total,
+        "has_prev": offset > 0,
+        "next_offset": offset + limit if offset + limit < total else None,
+        "prev_offset": offset - limit if offset > 0 else None
+    }), 200
 
 @book_bp.route('/<int:book_id>', methods=['GET'])
 def get_book(book_id):
