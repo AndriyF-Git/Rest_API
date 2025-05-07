@@ -14,34 +14,24 @@ class BookSchema(Schema):
 book_schema = BookSchema()
 books_schema = BookSchema(many=True)
 
-
 @book_bp.route('/', methods=['GET'])
 def get_books():
     limit = request.args.get('limit', 10, type=int)
     after_id = request.args.get('after_id', type=int)
-    before_id = request.args.get('before_id', type=int)
 
     query = Book.query.order_by(Book.id)
 
     if after_id is not None:
         query = query.filter(Book.id > after_id)
-    elif before_id is not None:
-        query = query.filter(Book.id < before_id).order_by(Book.id.desc())
 
     books = query.limit(limit).all()
 
-    if before_id is not None:
-        books.reverse()
-
     results = [{"id": b.id, "title": b.title, "author": b.author} for b in books]
-
     next_cursor = books[-1].id if books else None
-    prev_cursor = books[0].id if books else None
 
     return jsonify({
         "results": results,
-        "next_cursor": next_cursor,
-        "prev_cursor": prev_cursor
+        "next_cursor": next_cursor
     }), 200
 
 
