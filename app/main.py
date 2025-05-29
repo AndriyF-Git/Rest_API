@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .views import router
+from app.views import router
 
 app = FastAPI(title="Library API")
 
