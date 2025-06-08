@@ -1,37 +1,42 @@
 from flask import Flask, jsonify, request, abort
-from marshmallow import Schema, fields, ValidationError
-import uuid
+from dataclasses import dataclass, field
+from marshmallow import ValidationError
+from marshmallow_dataclass import class_schema
+import itertools
 from . import book_bp
+import json
 
-class BookSchema(Schema):
-    id = fields.Str(dump_only=True)
-    title = fields.Str(required=True)
-    author = fields.Str(required=True)
-    year = fields.Int(required=True)
+_id_gen = itertools.count(1)
+@dataclass(order=True, frozen = True)
+class Book:
+    id: int = field(init=False)
+    title: str
+    author: str
+    year: int
 
-book_schema = BookSchema()
-books_schema = BookSchema(many=True)
+    def __post_init__(self):
+        object.__setattr__(self, 'id', next(_id_gen))
 
-books = [
-    {
-        "id": 1,
-        "title": "1984",
-        "author": "George Orwell",
-        "year": 1949
-    },
-    {
-        "id": 2,
-        "title": "Brave New World",
-        "author": "Aldous Huxley",
-        "year": 1932
-    },
-    {
-        "id": 3,
-        "title": "Fahrenheit 451",
-        "author": "Ray Bradbury",
-        "year": 1953
-    }
+
+BookSchemaClass = class_schema(Book)
+BookSchema = BookSchemaClass()
+
+initial_books = [
+    {"title": "Dune", "author": "Frank Herbert", "year": 1965},
+    {"title": "1984", "author": "George Orwell", "year": 1949}
 ]
+
+books = []
+
+try:
+    for book_data in initial_books:
+        book = BookSchema.load(book_data)
+        books.append(book)
+    print(books)
+except ValidationError as err:
+    print(err.messages)
+    print(err.valid_data)
+
 
 @book_bp.route('/', methods=['GET'])
 def get_books():
@@ -39,28 +44,26 @@ def get_books():
 
 @book_bp.route('/<int:book_id>', methods=['GET'])
 def get_book(book_id):
-    book = next((book for book in books if book["id"] == book_id), None)
-    if not book:
-        abort(404, description="Книгу не знайдено")
-    return jsonify(book), 200
+    for book in books:
+        if getattr(book, "id", None) == book_id:
+            return jsonify(BookSchema.dump(book))
+    return jsonify({"error": "Book not found"}), 404
 
 @book_bp.route('/add_book', methods=['POST'])
 def add_book():
     try:
-        data = book_schema.load(request.json)
+        data = BookSchema.load(request.json)
     except ValidationError as err:
         return jsonify(err.messages), 400
 
-    data["id"] = str(uuid.uuid4())  # Генеруємо унікальний ID
     books.append(data)
     return jsonify(data), 201
 
-@book_bp.route('/delete/<string:book_id>', methods=['DELETE'])
+@book_bp.route('/delete/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
     global books
-    book = next((book for book in books if book["id"] == book_id), None)
-    if not book:
+    book_exists = any(book.id == book_id for book in books)
+    if not book_exists:
         abort(404, description="Книгу не знайдено")
-
-    books = [b for b in books if b["id"] != book_id]
+    books = [book for book in books if book.id != book_id]
     return jsonify({"message": "Книгу видалено"}), 200
